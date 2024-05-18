@@ -19,34 +19,22 @@ class LedgerController extends Controller
         return view('ledger.index');
     }
 
-
     public function upload(Request $request)
     {
         // Ensure file is present and valid
         $request->validate([
             'uploadFile' => 'required|file',
         ]);
-    
-        // Initialize success counter
-        $success = 0;
-    
-        // Open the file for reading
+
+        // Process the uploaded file
         $file = $request->file('uploadFile');
+        $success = 0;
+
         $fp = fopen($file->getPathname(), 'rb');
-    
-        // Start a database transaction
-        DB::beginTransaction();
-    
-        try {
-            // Read each line from the file
-            while (($line = fgets($fp)) !== false) {
-                // Decode JSON data from the line
+        while (($line = fgets($fp)) !== false) {
+            try {
                 $record_json = json_decode($line, true);
-    
-                // Debug: Output decoded JSON data
-                //Log::info('Decoded JSON Data:', $record_json);
-    
-                // Process based on record type
+                // Insert into database based on record type
                 if ($record_json["t"] == "company") {
                     TallyCompany::updateOrCreate(
                         ['guid' => $record_json["guid"]],
@@ -72,8 +60,7 @@ class LedgerController extends Controller
                         ]
                     );
                 } elseif ($record_json["t"] == "l") {
-                    // Create or update ledger
-                    $ledger = TallyLedger::updateOrCreate(
+                    TallyLedger::updateOrCreate(
                         ['guid' => $record_json["g"]],
                         [
                             'name' => $record_json["n"],
@@ -92,52 +79,45 @@ class LedgerController extends Controller
                             'xml' => json_encode((object)$record_json["x"]),
                         ]
                     );
+
+                    // $xmlData = json_decode($record_json["x"], true);
+                    $xmlData = $record_json["x"]; 
+
+
+                    foreach ($xmlData as $voucher) {
+                        // Extract voucher details
+                        $voucherData = [
+                            'ledger_guid' => $record_json["g"],
+                            'voucher_number' => $voucher["VNO"],
+                            'voucher_date' => $voucher["DATE"],
+                            // Add other voucher details as needed
+                        ];
     
-                    // Process associated voucher data
-                    if (isset($record_json["x"])) {
-                        foreach ($record_json["x"] as $voucher_data) {
-                            // Create voucher
-                            $voucher = Voucher::create([
-                                'type' => $voucher_data["TYPE"],
-                                'created_by' => $voucher_data["DATE"],
-                                'narration' => $voucher_data["NAR"],
-                            ]);
+                        // Store the voucher data
+                        $newVoucher = Voucher::create($voucherData);
     
-                            // Associate voucher with ledger
-                            $ledger->vouchers()->save($voucher);
+                        // Loop through voucher entries
+                        foreach ($voucher["entries"] as $entry) {
+                            // Extract voucher entry details
+                            $voucherEntryData = [
+                                'voucher_id' => $newVoucher->id,
+                                'account' => $entry["ACC"],
+                                'amount' => $entry["AMT"],
+                                // Add other voucher entry details as needed
+                            ];
     
-                            // Create voucher entries
-                            foreach ($voucher_data["BD"] as $bill_detail) {
-                                VoucherEntry::create([
-                                    'voucher_id' => $voucher->id,
-                                    'ledger' => $bill_detail["ACC"],
-                                    'amount' => $bill_detail["AMT"],
-                                    'entry_type' => $voucher_data["ITYPE"],
-                                ]);
-                            }
+                            // Store the voucher entry data
+                            VoucherEntry::create($voucherEntryData);
                         }
                     }
                 }
-    
-                // Increment success counter
                 $success++;
+            } catch (\Exception $e) {
+                // Handle exceptions
             }
-    
-            // Commit transaction
-            DB::commit();
-        } catch (\Exception $e) {
-            // Rollback transaction on error
-            DB::rollback();
-            // Log exception
-            Log::error('Exception occurred during upload:', ['exception' => $e]);
-            // Return error response or rethrow the exception
-            // (Depends on your application logic)
         }
-    
-        // Close the file
         fclose($fp);
-    
-        // Return the number of successful records processed
+
         return $success;
     }
     

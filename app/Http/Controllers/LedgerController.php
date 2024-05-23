@@ -157,6 +157,24 @@ class LedgerController extends Controller
             if (isset($decodedVoucher["AMT"])) {
                 $newVoucher->amount = $decodedVoucher["AMT"];
             }
+            if (isset($decodedVoucher["ACC"])) {
+                $newVoucher->credit_ledger = $decodedVoucher["ACC"];
+            }
+            if (isset($decodedVoucher["BAL"])) {
+                $newVoucher->balance_amount = $decodedVoucher["BAL"];
+            }
+            if (isset($decodedVoucher["IDATE"])) {
+                $newVoucher->instrument_date = Carbon::parse($decodedVoucher["IDATE"])->format('Y-m-d');
+            }
+            if (isset($decodedVoucher["INO"])) {
+                $newVoucher->instrument_number = $decodedVoucher["INO"];
+            }
+            if (isset($decodedVoucher["IAMT"])) {
+                $newVoucher->instrument_amount = $decodedVoucher["IAMT"];
+            }
+            if (isset($decodedVoucher["ITYPE"])) {
+                $newVoucher->instrument_type = $decodedVoucher["ITYPE"];
+            }
 
             // Save the changes
             $newVoucher->save();

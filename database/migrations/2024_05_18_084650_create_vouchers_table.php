@@ -15,22 +15,18 @@ return new class extends Migration
             $table->id();
             $table->string('ledger_guid');
             $table->foreign('ledger_guid')->references('guid')->on('tally_ledgers')->onDelete('cascade');
-
             $table->string('type')->nullable();
             $table->json('json')->nullable();
             $table->string('voucher_number')->nullable();
             $table->date('voucher_date')->nullable();
             $table->decimal('amount')->nullable();
             $table->mediumText('narration')->nullable();
-            // $table->tinyInteger('status')->default(0);
             $table->string('credit_ledger')->nullable();
             $table->string('balance_amount')->nullable();
-
             $table->date('instrument_date')->nullable();
             $table->string('instrument_number')->nullable();
             $table->string('instrument_amount')->nullable();
             $table->string('instrument_type')->nullable();
-
             $table->timestamps();
         });
     }

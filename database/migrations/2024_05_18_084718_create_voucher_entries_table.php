@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('voucher_entries', function (Blueprint $table) {
             $table->id();
-            $table->string('voucher_id');
-            $table->foreign('voucher_id')->references('ledger_guid')->on('vouchers')->onDelete('cascade');
+            $table->string('voucher_id')->nullable();
+            //$table->foreign('voucher_id')->references('ledger_guid')->on('vouchers')->onDelete('cascade');
             $table->string('ledger')->nullable();
             $table->decimal('amount')->nullable();
             $table->string('account')->nullable();

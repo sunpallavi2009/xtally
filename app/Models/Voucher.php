@@ -16,4 +16,9 @@ class Voucher extends Model
     {
         return $this->hasMany(VoucherEntry::class);
     }
+    
+    public function tallyLedger()
+    {
+        return $this->belongsTo(TallyLedger::class, 'ledger_guid', 'guid');
+    }
 }

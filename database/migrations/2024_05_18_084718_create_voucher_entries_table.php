@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('account')->nullable();
             $table->string('type')->nullable();
             $table->mediumText('narration')->nullable();
-            // $table->enum('entry_type', ['debit', 'credit', 'unknown'])->nullable();
+            $table->enum('entry_type', ['debit', 'credit', 'unknown'])->nullable();
             $table->timestamps();
         });
     }

@@ -129,322 +129,104 @@ class LedgerController extends Controller
     }
 
     private function processVoucherData($ledger_guid, $xmlData)
-{
-    foreach ($xmlData as $voucher) {
-        // Extract voucher details
-        $voucherData = [
-            'ledger_guid' => $ledger_guid,
-            'json' => json_encode($voucher), // Store the entire voucher JSON data
-        ];
+    {
+        foreach ($xmlData as $voucher) {
+            // Extract voucher details
+            $voucherData = [
+                'ledger_guid' => $ledger_guid,
+                'json' => json_encode($voucher), // Store the entire voucher JSON data
+            ];
 
-        // Decode the JSON and extract specific values
-        $decodedVoucher = json_decode($voucherData['json'], true);
+            // Decode the JSON and extract specific values
+            $decodedVoucher = json_decode($voucherData['json'], true);
 
-        // Create new Voucher instance
-        $newVoucher = new Voucher($voucherData);
+            // Create new Voucher instance
+            $newVoucher = new Voucher($voucherData);
 
-        if (isset($decodedVoucher["VNO"])) {
-            $newVoucher->voucher_number = $decodedVoucher["VNO"];
-        }
-        if (isset($decodedVoucher["DATE"])) {
-            $newVoucher->voucher_date = Carbon::parse($decodedVoucher["DATE"])->format('Y-m-d');
-        }
-        if (isset($decodedVoucher["TYPE"])) {
-            $newVoucher->type = $decodedVoucher["TYPE"];
-        }
-        if (isset($decodedVoucher["NAR"])) {
-            $newVoucher->narration = $decodedVoucher["NAR"];
-        }
-        if (isset($decodedVoucher["AMT"])) {
-            $newVoucher->amount = $decodedVoucher["AMT"];
-        }
-        if (isset($decodedVoucher["ACC"])) {
-            $newVoucher->credit_ledger = $decodedVoucher["ACC"];
-        }
-        if (isset($decodedVoucher["BAL"])) {
-            $newVoucher->balance_amount = $decodedVoucher["BAL"];
-        }
-        if (isset($decodedVoucher["IDATE"])) {
-            $newVoucher->instrument_date = Carbon::parse($decodedVoucher["IDATE"])->format('Y-m-d');
-        }
-        if (isset($decodedVoucher["INO"])) {
-            $newVoucher->instrument_number = $decodedVoucher["INO"];
-        }
-        if (isset($decodedVoucher["IAMT"])) {
-            $newVoucher->instrument_amount = $decodedVoucher["IAMT"];
-        }
-        if (isset($decodedVoucher["ITYPE"])) {
-            $newVoucher->instrument_type = $decodedVoucher["ITYPE"];
-        }
+            if (isset($decodedVoucher["VNO"])) {
+                $newVoucher->voucher_number = $decodedVoucher["VNO"];
+            }
+            if (isset($decodedVoucher["DATE"])) {
+                $newVoucher->voucher_date = Carbon::parse($decodedVoucher["DATE"])->format('Y-m-d');
+            }
+            if (isset($decodedVoucher["TYPE"])) {
+                $newVoucher->type = $decodedVoucher["TYPE"];
+            }
+            if (isset($decodedVoucher["NAR"])) {
+                $newVoucher->narration = $decodedVoucher["NAR"];
+            }
+            if (isset($decodedVoucher["AMT"])) {
+                $newVoucher->amount = $decodedVoucher["AMT"];
+            }
+            if (isset($decodedVoucher["ACC"])) {
+                $newVoucher->credit_ledger = $decodedVoucher["ACC"];
+            }
+            if (isset($decodedVoucher["BAL"])) {
+                $newVoucher->balance_amount = $decodedVoucher["BAL"];
+            }
+            if (isset($decodedVoucher["IDATE"])) {
+                $newVoucher->instrument_date = Carbon::parse($decodedVoucher["IDATE"])->format('Y-m-d');
+            }
+            if (isset($decodedVoucher["INO"])) {
+                $newVoucher->instrument_number = $decodedVoucher["INO"];
+            }
+            if (isset($decodedVoucher["IAMT"])) {
+                $newVoucher->instrument_amount = $decodedVoucher["IAMT"];
+            }
+            if (isset($decodedVoucher["ITYPE"])) {
+                $newVoucher->instrument_type = $decodedVoucher["ITYPE"];
+            }
 
-        // Save the new Voucher
-        $newVoucher->save();
+            // Save the new Voucher
+            $newVoucher->save();
 
-        // Process BD map if the voucher type is 'Bill' or 'Sale'
-        $bd_map = [];
-        $amount = isset($decodedVoucher["AMT"]) ? $decodedVoucher["AMT"] : 0;
-        $name = isset($decodedVoucher["ACC"]) ? $decodedVoucher["ACC"] : '';
+            // Process BD map if the voucher type is 'Bill' or 'Sale'
+            $bd_map = [];
+            $amount = isset($decodedVoucher["AMT"]) ? $decodedVoucher["AMT"] : 0;
+            $name = isset($decodedVoucher["ACC"]) ? $decodedVoucher["ACC"] : '';
 
-        switch (strtolower($decodedVoucher['TYPE'])) {
-            case "bill":
-            case "sale":
-            case "bills":
-            case "jrnl":
-            case "journal":
-                if (isset($decodedVoucher['BD'])) {
-                    $bd_jsonarray = $decodedVoucher['BD'];
-                    foreach ($bd_jsonarray as $item) {
-                        foreach ($item as $key => $value) {
-                            $bd_map[$key] = $value;
+            switch (strtolower($decodedVoucher['TYPE'])) {
+                case "bill":
+                case "sale":
+                case "bills":
+                case "jrnl":
+                case "journal":
+                    if (isset($decodedVoucher['BD'])) {
+                        $bd_jsonarray = $decodedVoucher['BD'];
+                        foreach ($bd_jsonarray as $item) {
+                            foreach ($item as $key => $value) {
+                                $bd_map[$key] = $value;
+                            }
                         }
+                    } else {
+                        $bd_map[$decodedVoucher['ACC']] = -$amount;
                     }
-                } else {
+                    $bd_map[$name] = $amount;
+                    break;
+                default:
+                    $bd_map[$name] = $amount;
                     $bd_map[$decodedVoucher['ACC']] = -$amount;
-                }
-                $bd_map[$name] = $amount;
-                break;
-            default:
-                $bd_map[$name] = $amount;
-                $bd_map[$decodedVoucher['ACC']] = -$amount;
-        }
+            }
 
-        // Log the BD map for debugging
-        Log::info('BD Map: ', $bd_map);
+            // Log the BD map for debugging
+            Log::info('BD Map: ', $bd_map);
 
-        // Insert the BD map into the VoucherEntries table
-        foreach ($bd_map as $key => $value) {
-            VoucherEntry::create([
-                'voucher_id' => $newVoucher->id,
-                'ledger' => $key,
-                'amount' => $value,
-                'account' => $decodedVoucher["ACC"], // Store the account value
-                'type' => $decodedVoucher["TYPE"], // Store the type value
-                'narration' => $decodedVoucher["NAR"] ?? null // Store the narration value
-            ]);
+            // Insert the BD map into the VoucherEntries table
+            foreach ($bd_map as $key => $value) {
+
+                $entry_type = $amount < 0 ? "debit" : "credit";
+
+                VoucherEntry::create([
+                    'voucher_id' => $newVoucher->id,
+                    'ledger' => $key,
+                    'amount' => $value,
+                    'account' => $decodedVoucher["ACC"], // Store the account value
+                    'type' => $decodedVoucher["TYPE"], // Store the type value
+                    'narration' => $decodedVoucher["NAR"] ?? null, // Store the narration value
+                    'entry_type' => $entry_type,
+                ]);
+            }
         }
     }
-}
-
-
-    // private function processVoucherData($ledger_guid, $xmlData)
-    // {
-    //     foreach ($xmlData as $voucher) {
-    //         // Extract voucher details
-    //         $voucherData = [
-    //             'ledger_guid' => $ledger_guid,
-    //             'json' => json_encode($voucher), // Store the entire voucher JSON data
-    //         ];
-    
-    //         // Decode the JSON and extract specific values
-    //         $decodedVoucher = json_decode($voucherData['json'], true);
-    
-    //         // Create new Voucher instance
-    //         $newVoucher = new Voucher($voucherData);
-    
-    //         if (isset($decodedVoucher["VNO"])) {
-    //             $newVoucher->voucher_number = $decodedVoucher["VNO"];
-    //         }
-    //         if (isset($decodedVoucher["DATE"])) {
-    //             $newVoucher->voucher_date = Carbon::parse($decodedVoucher["DATE"])->format('Y-m-d');
-    //         }
-    //         if (isset($decodedVoucher["TYPE"])) {
-    //             $newVoucher->type = $decodedVoucher["TYPE"];
-    //         }
-    //         if (isset($decodedVoucher["NAR"])) {
-    //             $newVoucher->narration = $decodedVoucher["NAR"];
-    //         }
-    //         if (isset($decodedVoucher["AMT"])) {
-    //             $newVoucher->amount = $decodedVoucher["AMT"];
-    //         }
-    //         if (isset($decodedVoucher["ACC"])) {
-    //             $newVoucher->credit_ledger = $decodedVoucher["ACC"];
-    //         }
-    //         if (isset($decodedVoucher["BAL"])) {
-    //             $newVoucher->balance_amount = $decodedVoucher["BAL"];
-    //         }
-    //         if (isset($decodedVoucher["IDATE"])) {
-    //             $newVoucher->instrument_date = Carbon::parse($decodedVoucher["IDATE"])->format('Y-m-d');
-    //         }
-    //         if (isset($decodedVoucher["INO"])) {
-    //             $newVoucher->instrument_number = $decodedVoucher["INO"];
-    //         }
-    //         if (isset($decodedVoucher["IAMT"])) {
-    //             $newVoucher->instrument_amount = $decodedVoucher["IAMT"];
-    //         }
-    //         if (isset($decodedVoucher["ITYPE"])) {
-    //             $newVoucher->instrument_type = $decodedVoucher["ITYPE"];
-    //         }
-    
-    //         // Save the new Voucher
-    //         $newVoucher->save();
-    
-    //         // Process BD map if the voucher type is 'Bill' or 'Sale'
-    //         $bd_map = [];
-    //         $amount = isset($decodedVoucher["AMT"]) ? $decodedVoucher["AMT"] : 0;
-    //         $name = isset($decodedVoucher["ACC"]) ? $decodedVoucher["ACC"] : '';
-    
-    //         switch (strtolower($decodedVoucher['TYPE'])) {
-    //             case "bill":
-    //             case "sale":
-    //             case "bills":
-    //             case "jrnl":
-    //             case "journal":
-    //                 if (isset($decodedVoucher['BD'])) {
-    //                     $bd_jsonarray = $decodedVoucher['BD'];
-    //                     foreach ($bd_jsonarray as $item) {
-    //                         foreach ($item as $key => $value) {
-    //                             $bd_map[$key] = $value;
-    //                         }
-    //                     }
-    //                 } else {
-    //                     $bd_map[$decodedVoucher['ACC']] = -$amount;
-    //                 }
-    //                 $bd_map[$name] = $amount;
-    //                 break;
-    //             default:
-    //                 $bd_map[$name] = $amount;
-    //                 $bd_map[$decodedVoucher['ACC']] = -$amount;
-    //         }
-    
-    //         // Log the BD map for debugging
-    //         Log::info('BD Map: ', $bd_map);
-    
-    //         // Insert the BD map into the VoucherEntries table
-    //         foreach ($bd_map as $key => $value) {
-    //             VoucherEntry::create([
-    //                 'voucher_id' => $newVoucher->id,
-    //                 'ledger' => $key,
-    //                 'amount' => $value,
-    //                 'account' => $decodedVoucher["ACC"], 
-    //                 'type' => $decodedVoucher["TYPE"],
-    //                 // 'narration' => $decodedVoucher["NAR"]
-    //             ]);
-    //         }
-    //     }
-    // }
-    
-
-
-    // private function processVoucherData($ledger_guid, $xmlData)
-    // {
-    //     foreach ($xmlData as $voucher) {
-    //         // Extract voucher details
-    //         $voucherData = [
-    //             'ledger_guid' => $ledger_guid,
-    //             'json' => json_encode($voucher), // Store the entire voucher JSON data
-    //         ];
-
-    //         // Store the voucher data
-    //         $newVoucher = Voucher::create($voucherData);
-
-    //         // Decode the JSON and extract specific values
-    //         $decodedVoucher = json_decode($voucherData['json'], true);
-
-    //         if (isset($decodedVoucher["VNO"])) {
-    //             $newVoucher->voucher_number = $decodedVoucher["VNO"];
-    //         }
-    //         if (isset($decodedVoucher["DATE"])) {
-    //             $newVoucher->voucher_date = Carbon::parse($decodedVoucher["DATE"])->format('Y-m-d');
-    //         }
-    //         if (isset($decodedVoucher["TYPE"])) {
-    //             $newVoucher->type = $decodedVoucher["TYPE"];
-    //         }
-    //         if (isset($decodedVoucher["NAR"])) {
-    //             $newVoucher->narration = $decodedVoucher["NAR"];
-    //         }
-    //         if (isset($decodedVoucher["AMT"])) {
-    //             $newVoucher->amount = $decodedVoucher["AMT"];
-    //         }
-    //         if (isset($decodedVoucher["ACC"])) {
-    //             $newVoucher->credit_ledger = $decodedVoucher["ACC"];
-    //         }
-    //         if (isset($decodedVoucher["BAL"])) {
-    //             $newVoucher->balance_amount = $decodedVoucher["BAL"];
-    //         }
-    //         if (isset($decodedVoucher["IDATE"])) {
-    //             $newVoucher->instrument_date = Carbon::parse($decodedVoucher["IDATE"])->format('Y-m-d');
-    //         }
-    //         if (isset($decodedVoucher["INO"])) {
-    //             $newVoucher->instrument_number = $decodedVoucher["INO"];
-    //         }
-    //         if (isset($decodedVoucher["IAMT"])) {
-    //             $newVoucher->instrument_amount = $decodedVoucher["IAMT"];
-    //         }
-    //         if (isset($decodedVoucher["ITYPE"])) {
-    //             $newVoucher->instrument_type = $decodedVoucher["ITYPE"];
-    //         }
-
-    //         // Save the changes
-    //         $newVoucher->save();
-    //     }
-    // }
-
-
-
-// private function processVoucherData($ledger_guid, $xmlData)
-// {
-//     foreach ($xmlData as $voucher) {
-//         // Extract voucher details
-//         $voucherData = [
-//             'ledger_guid' => $ledger_guid,
-//             'json' => json_encode($voucher), // Store the entire voucher JSON data
-//         ];
-
-//         // Store the voucher data
-//         $newVoucher = Voucher::create($voucherData);
-
-//         // Additional voucher details
-//         if (isset($voucher["VNO"])) {
-//             $newVoucher->voucher_number = $voucher["VNO"];
-//         }
-//         if (isset($voucher["DATE"])) {
-//             $newVoucher->voucher_date = Carbon::parse($voucher["DATE"])->format('Y-m-d');
-//         }
-//         if (isset($voucher["TYPE"])) {
-//             $newVoucher->type = $voucher["TYPE"];
-//         }
-//         if (isset($voucher["NAR"])) {
-//             $newVoucher->narration = $voucher["NAR"];
-//         }
-//         if (isset($voucher["AMT"])) {
-//             $newVoucher->amount = $voucher["AMT"];
-//         }
-
-//         // Save the changes
-//         $newVoucher->save();
-//     }
-// }
-
-
-    
-    // private function processVoucherData($ledger_guid, $xmlData)
-    // {
-    //     foreach ($xmlData as $voucher) {
-    //         // Extract voucher details
-    //         $voucherData = [
-    //             'ledger_guid' => $ledger_guid,
-    //             'json' => $xmlData,
-    //         ];
-    
-    //         // Store the voucher data
-    //         $newVoucher = Voucher::create($voucherData);
-    
-    //         // Loop through voucher entries
-    //         // foreach ($voucher as $key => $entry) {
-    //         //     // Check if the entry is an array and contains the necessary keys
-    //         //     if (is_array($entry) && isset($entry["ACC"]) && isset($entry["AMT"])) {
-    //         //         // Extract voucher entry details
-    //         //         $voucherEntryData = [
-    //         //             'voucher_id' => $newVoucher->id,
-    //         //             'account' => $entry["ACC"],
-    //         //             'amount' => $entry["AMT"],
-    //         //         ];
-    
-    //         //         // Store the voucher entry data
-    //         //         VoucherEntry::create($voucherEntryData);
-    //         //     }
-    //         // }
-    //     }
-    // }
 
 }

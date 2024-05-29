@@ -10,8 +10,45 @@
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="bg-white overflow-hidden shadow-sm">
+                    <div class="text-center p-6">
+                        @if($vouchers->isNotEmpty())
+                            @foreach ($vouchers as $voucher)
+                                <h2><b>{{ $voucher->type }}</b></h2>
+                            @endforeach
+                        @else
+                            <h2>No Vouchers Found</h2>
+                        @endif
+
+                        @if($society)
+                            <h2><b>{{ $society->name }}</b></h2>
+                            <h2>{{ $society->address1 }}</h2>
+                        @else
+                            <h2>No Society Information Found</h2>
+                        @endif
+
+                        @if($vouchers->isNotEmpty())
+                            @foreach ($vouchers as $voucher)
+                                <h2>{{ $voucher->credit_ledger }}</h2>
+                            @endforeach
+                        @endif
+
+                        @if($members)
+                            <div>
+                                <h2 class="font-semibold text-xl text-gray-800 leading-tight text-start">
+                                    {{ $members->name }}
+                                </h2>
+                                <h2 class="font-semibold text-xl text-gray-800 leading-tight text-right">
+                                    {{ $members->alias1 }}
+                                </h2>
+                            </div>
+                        @else
+                            <h2>No Member Information Found</h2>
+                        @endif
+                    </div>
+                </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="text-center p-6 text-gray-900">
+                    <div class="p-6 text-gray-900">
                         <table id="voucherEntry-datatable" class="display" style="width:100%">
                             <thead>
                                 <tr>

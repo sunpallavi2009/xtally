@@ -17,21 +17,16 @@
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="text-center p-6 text-gray-900">
+                <div class="bg-white overflow-hidden shadow-sm">
+                    <div class="text-center p-6">
                         @foreach ($society as $company)
-                            <h2>{{ $company->name }}</h2>
-                            <h4>{{ $company->address1 }}</h4>
+                            <h2><b>{{ $company->name }}</b></h2>
+                            <h2>{{ $company->address1 }}</h>
                         @endforeach
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="text-center p-6 text-gray-900">
+                    <div class="p-6 text-gray-900">
                         <table id="member-datatable" class="display" style="width:100%">
                             <thead>
                                 <tr>
@@ -40,8 +35,9 @@
                                     <th>Alias</th>
                                     <th>Parent</th>
                                     <th>Primary Group</th>
-                                    {{-- <th>Balance</th>
-                                    <th>Total Voucher</th> --}}
+                                    <th>Balance</th>
+                                    <th>Total Voucher</th>
+                                    <th>First Entry</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -51,12 +47,12 @@
                 </div>
             </div>
         </div>
-{{-- @dd($societyGuid); --}}
+
         @push('scripts')
 
         <script>
             var table;
-
+            
             $(document).ready(function() {
                 table = $('#member-datatable').DataTable({
                     processing: true,
@@ -64,7 +60,7 @@
                     ajax: {
                         url: "{{ route('members.get-data') }}",
                         data: function(d) {
-                            // d.societyGuid = "{{ $societyGuid }}";
+                            d.guid = "{{ $societyGuid }}";
                         }
                     },
                     columns: [
@@ -79,8 +75,9 @@
                         {data: 'alias1'},
                         {data: 'parent'},
                         {data: 'primary_group'},
-                        // {data: 'balance'},
-                        // {data: 'total_vouchers'}, 
+                        {data: 'this_year_balance'}, 
+                        {data: 'vouchers_count'},
+                        {data: 'first_voucher_date', name: 'first_voucher_date'},
                     ]
                 });
 

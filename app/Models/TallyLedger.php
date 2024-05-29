@@ -16,4 +16,9 @@ class TallyLedger extends Model
     {
         return $this->hasMany(Voucher::class, 'ledger_guid', 'guid');
     }
+
+    public function firstVoucherDate()
+    {
+        return $this->vouchers()->orderBy('voucher_date', 'asc')->first()->voucher_date ?? null;
+    }
 }

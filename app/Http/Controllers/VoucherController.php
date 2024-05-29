@@ -24,7 +24,9 @@ class VoucherController extends Controller
         if ($request->ajax()) {
             $ledgerGuid = $request->query('ledger_guid');
             $vouchers = Voucher::where('ledger_guid', $ledgerGuid)->latest()->get();
-
+    
+            logger()->info('Vouchers:', $vouchers->toArray()); // Add this line
+    
             return DataTables::of($vouchers)
                 ->addColumn('debit', function ($voucher) {
                     return $voucher->amount < 0 ? abs($voucher->amount) : '';
@@ -32,10 +34,6 @@ class VoucherController extends Controller
                 ->addColumn('credit', function ($voucher) {
                     return $voucher->amount >= 0 ? $voucher->amount : '';
                 })
-                ->addColumn('account_link', function ($voucher) {
-                    return '<a href="' . route('voucherEntry.index', ['voucher_id' => $voucher->id]) . '">' . $voucher->credit_ledger . '</a>';
-                })
-                ->rawColumns(['account_link'])
                 ->addIndexColumn()
                 ->make(true);
         }

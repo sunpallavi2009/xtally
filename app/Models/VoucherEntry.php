@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Voucher;
+use App\Models\TallyLedger;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -12,8 +13,11 @@ class VoucherEntry extends Model
 
     protected $guarded = [];
 
-    public function voucher()
+    
+    
+    public function tallyLedger()
     {
-        return $this->belongsTo(Voucher::class);
+        return $this->belongsTo(TallyLedger::class, 'ledger_guid', 'guid');
     }
+
 }
